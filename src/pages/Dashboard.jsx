@@ -1277,10 +1277,8 @@ export default function Dashboard() {
           return
         }
         
-        const setting = cropSettings[idx]
-        if (setting) {
-          facePages[newWalls[idx].id] = setting.sheetIdx
-        }
+        const setting = cropSettings[idx] || { rx: 0.1, ry: 0.1, rw: 0.8, rh: 0.8, sheetIdx: 0 }
+        facePages[newWalls[idx].id] = setting.sheetIdx
         const targetSheet = sheets[setting.sheetIdx] || sheets[0]
         if (!targetSheet) {
           processCrops(idx + 1)
