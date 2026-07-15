@@ -1738,7 +1738,12 @@ const autoCropImage = (imageUrl) => {
             <span className="hidden sm:inline">戻る</span>
           </Link>
           <span className="h-5 w-px bg-white/10" />
-          <Logo />
+          <div className="flex items-center gap-1.5">
+            <Logo />
+            <span className="rounded bg-white/5 border border-white/10 px-1.5 py-0.5 text-[9px] font-bold text-zinc-550 font-mono leading-none">
+              v.0.1.1
+            </span>
+          </div>
         </div>
         <div className="hidden items-center gap-3 lg:flex">
           <button

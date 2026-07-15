@@ -372,7 +372,11 @@ function Footer() {
         </div>
         <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-white/5 pt-6 text-xs text-zinc-600 sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} スマートパース AI. All rights reserved.</p>
-          <p>Made for architects &amp; furniture designers in Japan.</p>
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-[10px] text-zinc-600">v.0.1.1</span>
+            <span className="h-3 w-px bg-white/5" />
+            <p>Made for architects &amp; furniture designers in Japan.</p>
+          </div>
         </div>
       </div>
     </footer>
