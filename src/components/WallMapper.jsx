@@ -33,6 +33,7 @@ export default function WallMapper({
   const [hover, setHover] = useState(null)
   const [scanStyle, setScanStyle] = useState({ left: '0%', top: '0%', width: '100%', height: '100%' })
   const [dragOverWallId, setDragOverWallId] = useState(null)
+  const [zoomImage, setZoomImage] = useState(null) // 展開図の拡大表示用
 
   // ユーザーのパン＆ズーム状態
   const [zoom, setZoom] = useState(1.0)
@@ -407,9 +408,10 @@ export default function WallMapper({
                     <>
                       <circle cx={mx + 9} cy={my - 9} r="4" fill="var(--color-accent-400)" />
                       {/* 壁の直近に切り出された展開図プレビューサムネイルをリアルタイム表示！ */}
+                      {/* 記号との重なりを防ぐため、壁の法線（外側）に沿って配置 */}
                       <foreignObject
-                        x={mx + 20}
-                        y={my - 28}
+                        x={mx + wall.normal.x * 45 - 29}
+                        y={my + wall.normal.y * 35 - 20}
                         width="58"
                         height="40"
                         className="pointer-events-none transition-all duration-300 transform scale-95 hover:scale-110 shadow-2xl"
@@ -434,10 +436,10 @@ export default function WallMapper({
                     }}
                     title="視線の向きを反転"
                   >
-                    <circle cx={mx + 13} cy={my - 13} r="6.5" fill="#18181b" stroke={arrowColor} strokeWidth="1" />
+                    <circle cx={bx + 12} cy={by - 12} r="6.5" fill="#18181b" stroke={arrowColor} strokeWidth="1" />
                     {/* 回転矢印を模した簡易アイコンパス */}
                     <path
-                      d={`M ${mx + 11} ${my - 13} a 2.2 2.2 0 0 1 4.1 -1.1 m 0 0 L ${mx + 13.6} ${my - 16.2} M ${mx + 15.1} ${my - 14.1} L ${mx + 15.1} ${my - 11.2}`}
+                      d={`M ${bx + 10} ${by - 12} a 2.2 2.2 0 0 1 4.1 -1.1 m 0 0 L ${bx + 12.6} ${by - 15.2} M ${bx + 14.1} ${by - 13.1} L ${bx + 14.1} ${by - 10.2}`}
                       stroke={arrowColor}
                       strokeWidth="1"
                       strokeLinecap="round"
@@ -551,14 +553,40 @@ export default function WallMapper({
             onFlip={() => onFlip(wall.id)}
             onCrop={() => onCrop?.(wall.id)}
             onMaterialFile={(url) => onMaterialFile?.(wall.id, url)}
+            onZoom={setZoomImage}
           />
         ))}
       </div>
+
+      {/* Lightbox Modal for Zooming Mapped Image */}
+      {zoomImage && (
+        <div 
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-10 backdrop-blur-md cursor-zoom-out animate-in fade-in duration-200"
+          onClick={() => setZoomImage(null)}
+        >
+          <div className="relative max-h-full max-w-full flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={zoomImage.url} 
+              alt={zoomImage.label} 
+              className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200 bg-white" 
+            />
+            <span className="mt-4 rounded-full bg-ink-900/85 px-4 py-1.5 text-xs font-bold text-zinc-100 border border-white/10 shadow-md">
+              {zoomImage.label}
+            </span>
+            <button
+              onClick={() => setZoomImage(null)}
+              className="absolute -top-12 right-0 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors shadow"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function WallCard({ wall, selected, onSelect, onFile, onRemove, onFlip, onCrop, onMaterialFile }) {
+function WallCard({ wall, selected, onSelect, onFile, onRemove, onFlip, onCrop, onMaterialFile, onZoom }) {
   const inputRef = useRef(null)
   const materialInputRef = useRef(null)
   const isFacingIn = (wall.normal.x * (0.5 - wall.mid.x) + wall.normal.y * (0.5 - wall.mid.y)) >= 0
@@ -594,6 +622,11 @@ function WallCard({ wall, selected, onSelect, onFile, onRemove, onFlip, onCrop, 
             {isFacingIn ? '内観' : '外観・ファサード'}
           </span>
           {wall.source === 'custom' && <span className="text-[8px] px-1.5 py-0.5 rounded font-black bg-white/5 text-zinc-400 scale-90 origin-left tracking-wide">造作/什器</span>}
+          {wall.pageIdx !== null && wall.pageIdx !== undefined && (
+            <span className="text-[8px] px-1.5 py-0.5 rounded font-black bg-teal-500/10 text-teal-400 scale-90 origin-left tracking-wide border border-teal-500/20">
+              P.{wall.pageIdx + 1}
+            </span>
+          )}
         </div>
       </div>
 
@@ -601,7 +634,15 @@ function WallCard({ wall, selected, onSelect, onFile, onRemove, onFlip, onCrop, 
 
       {wall.image ? (
         <div className="relative overflow-hidden rounded-lg border border-white/5 bg-zinc-950/40">
-          <img src={wall.image} alt={wallLabel(wall.index)} className="h-16 w-full object-contain" />
+          <img 
+            src={wall.image} 
+            alt={wallLabel(wall.index)} 
+            className="h-16 w-full object-contain cursor-zoom-in hover:brightness-110 transition-all" 
+            onClick={(e) => {
+              e.stopPropagation()
+              onZoom?.({ url: wall.image, label: `${wallLabel(wall.index)} 展開図` })
+            }}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
           <button
             onClick={(e) => { e.stopPropagation(); onRemove() }}

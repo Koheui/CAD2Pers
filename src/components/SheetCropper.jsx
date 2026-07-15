@@ -125,9 +125,11 @@ export default function SheetCropper({
     try {
       const out = {}
       const scales = {}
+      const facePages = {}
       FACES.forEach((f) => {
         out[f.key] = null
         scales[f.key] = null
+        facePages[f.key] = null
       })
       for (const r of nextRects) {
         const pageObj = nextPages[r.page]
@@ -136,8 +138,9 @@ export default function SheetCropper({
         if (!url) continue
         out[r.face] = url
         scales[r.face] = mmPerPxFrom(pageObj?.ptPerPx, pageScales[r.page] ?? null)
+        facePages[r.face] = r.page
       }
-      onApply(out, nextPages, scales)
+      onApply(out, nextPages, scales, facePages)
     } catch (e) {
       console.error('Error in applyWithData:', e)
     } finally {
@@ -205,7 +208,7 @@ export default function SheetCropper({
         
         // 親の sheets 状態を即時リアルタイム同期し、自動紐づけボタンの無効化を解除！
         setTimeout(() => {
-          onApply({}, next, {})
+          onApply({}, next, {}, {})
         }, 10)
         
         return next
@@ -395,14 +398,16 @@ export default function SheetCropper({
     try {
       const out = {}
       const scales = {}
+      const facePages = {}
       for (const r of currentRects) {
         const nat = naturals[r.page]
         if (!nat) continue
         const dataUrl = await cropPolygonToDataUrl(nat.src, r.points, 12)
         out[r.face] = dataUrl
         scales[r.face] = mmPerPxFrom(pages[r.page]?.ptPerPx, pageScales[r.page])
+        facePages[r.face] = r.page
       }
-      onApply(out, pages, scales)
+      onApply(out, pages, scales, facePages)
     } catch (e) {
       console.error('Error auto applying crops:', e)
     } finally {
@@ -452,13 +457,15 @@ export default function SheetCropper({
     try {
       const out = {}
       const scales = {}
+      const facePages = {}
       for (const r of rects) {
         const url = await cropToDataUrl(r)
         if (!url) continue
         out[r.face] = url
         scales[r.face] = mmPerPxFrom(pages[r.page]?.ptPerPx, pageScales[r.page])
+        facePages[r.face] = r.page
       }
-      onApply(out, pages, scales)
+      onApply(out, pages, scales, facePages)
       setIsExpanded(false)
     } catch (e) {
       console.error('Error applying crops:', e)

@@ -1187,12 +1187,14 @@ export default function Dashboard() {
     w1.normal = { x: 0, y: -1 } // 奥向き（正面から什器を見る向き）
     w1.image = elevUrl
     w1.scale = 150
+    w1.pageIdx = 0
 
     // B面 (側面、L字のようにつなぐ)
     const w2 = makeCustomWall([{ x: 0.25, y: 0.31 }, { x: 0.25, y: 0.65 }], [w1], w, h, { cx: 0.5, cy: 0.5 })
     w2.normal = { x: 1, y: 0 } // 右向き（人が見る向き＝内向き）
     w2.image = sideUrl
     w2.scale = 150
+    w2.pageIdx = 1
     
     setWalls([w1, w2])
     
@@ -1257,11 +1259,12 @@ export default function Dashboard() {
       // 実際のクロップとマッピング処理
       const crops = {}
       const cropScales = {}
+      const facePages = {}
       
       const processCrops = (idx) => {
         if (idx >= newWalls.length) {
           setWalls(
-            newWalls.map((w) => (crops[w.id] ? { ...w, image: crops[w.id], scale: cropScales[w.id] } : w))
+            newWalls.map((w) => (crops[w.id] ? { ...w, image: crops[w.id], scale: cropScales[w.id], pageIdx: facePages[w.id] ?? null } : w))
           )
           setAnalyzing(false)
           flash(
@@ -1275,6 +1278,9 @@ export default function Dashboard() {
         }
         
         const setting = cropSettings[idx]
+        if (setting) {
+          facePages[newWalls[idx].id] = setting.sheetIdx
+        }
         const targetSheet = sheets[setting.sheetIdx] || sheets[0]
         if (!targetSheet) {
           processCrops(idx + 1)
@@ -1667,10 +1673,10 @@ const autoCropImage = (imageUrl) => {
   }
 
   // 展開図シートの切り出し結果を各壁へ反映（実寸スケールも引き継ぐ）
-  const applyCrops = (crops, pages, cropScales = {}) => {
+  const applyCrops = (crops, pages, cropScales = {}, facePages = {}) => {
     setSheets(pages)
     setWalls((ws) =>
-      ws.map((w) => (w.id in crops ? { ...w, image: crops[w.id], scale: cropScales[w.id] ?? null } : w)),
+      ws.map((w) => (w.id in crops ? { ...w, image: crops[w.id], scale: cropScales[w.id] ?? null, pageIdx: facePages[w.id] ?? null } : w)),
     )
     setCropperOpen(false)
     setCropperTargetWallId(null)
